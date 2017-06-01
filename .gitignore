@@ -1,0 +1,100 @@
+# Simulating-capture-recapture-data
+This code can be used to simulate capture-recapture data
+################################################################################
+# SIMULATE CJS DATA 
+################################################################################
+# Collecting parameter estiamtes for the multiple simulated datasets
+phi.ipm.simul <- vector()
+phi.ipm.sd <- vector()
+p.ipm.simul <- vector()
+p.ipm.sd <- vector()
+rho.ipm.simul <- vector()
+rho.ipm.sd <- vector()
+pi.ipm.simul <- vector()
+pi.ipm.sd <- vector()
+f.ipm.simul <- vector()
+f.ipm.sd <- vector()
+eta.ipm.simul <- vector()
+eta.ipm.sd <- vector()
+sdnoise.ipm.simul <- vector()
+sdnoise.ipm.sd <- vector()
+sdobs.ipm.simul <- vector()
+sdobs.ipm.sd <- vector()
+CompIndex.ipm.simul <- vector()
+CompIndex.ipm.sd <- vector()
+Bbar.ipm.simul <- vector()
+Bbar.ipm.sd <- vector()
+ntot.ipm.simul <- vector()
+ntot.ipm.sd <- vector()
+deviance.ipm.simul <- vector()
+
+phi.cjs.simul <- vector()
+phi.cjs.sd <- vector()
+p.cjs.simul <- vector()
+p.cjs.sd <- vector()
+rho.cjs.simul <- vector()
+rho.cjs.sd <- vector()
+pi.cjs.simul <- vector()
+pi.cjs.sd <- vector()
+
+for (k in 1:96){
+  
+  # Define parameter values for CJS
+  n.occasions <- 10                         # Number of capture occasions
+  marked <- rep(50, 9)                      # Annual number of newly marked individuals
+  phi <- rep(0.55, n.occasions-1)           # Survival probability for 'n.occasions-1'
+  p <- rep(0.4, n.occasions-1)              # Detection probability for 'n.occasions-1'
+  pi <- 0.55                                # Residency probability
+  rho <- 0.3                                # Pre-determining Residency Probability
+  
+  # Define function to simulate a capture-history (CH) matrix
+  simul.cjs <- function(PHI, P, RHO, PI, marked, n.occasions){
+    CH <- matrix(0, ncol = n.occasions, nrow = sum(marked))
+    r <- rep(0, length=nrow(CH))
+    # Define a vector with the occasion of marking
+    mark.occ <- rep(1:length(marked), marked[1:length(marked)])
+    #Fill the CH matrix
+    for (i in 1:sum(marked)){
+      CH[i, mark.occ[i]] <- 1       # Write an 1 at the release occasion
+      # Bernoulli trial: is individual resident?
+      res <- rbinom(1, 1, PI)
+      if (res==0) next    # If dead, move to next individual 
+      # Bernoulli trial: is individual pre-determined to be resident?
+      pdres <- rbinom(1, 1, RHO)  
+      r[i] <- pdres
+      if (mark.occ[i]==n.occasions) next
+      for (t in (mark.occ[i]+1):n.occasions){
+        # Bernoulli trial: does individual survive occasion?
+        sur <- rbinom(1, 1, PHI)
+        if (sur==0) break    # If dead, move to next individual 
+        # Bernoulli trial: is individual recaptured? 
+        rp <- rbinom(1, 1, P)
+        if (rp==1) CH[i,t] <- 1
+      } #t
+    } #i
+    return(list(CH, r))
+  }
+  
+  # Execute function to populate matrices of all relavent probabilities
+  cjs.data <- simul.cjs(phi, p, rho, pi, marked, n.occasions)
+  
+  y = cjs.data[[1]]
+  r <- cjs.data[[2]]
+  r[is.na(r)] <- 0
+  nind = dim(y)[1]
+  nyear = dim(y)[2]
+  ################################################################################
+  # Create vector with occasion of marking
+  get.first <- function(x) min(which(x!=0))
+  first <- apply(y, 1, get.first)
+  ################################################################################
+  #Generating station data
+  nsta <- as.numeric(rpois(1,25))
+  sta <- vector(mode="numeric", length=length(r))
+  div.sta <- trunc(length(sta)/nsta)
+  sta[1:(div.sta*nsta)] <- rep(c(1:nsta), each=div.sta)
+  if ( sta[end(sta)[1]]== 0){
+    sta[((div.sta*nsta)+1):length(sta)] <- nsta+1
+    nsta <- nsta+1
+  }
+  ################################################################################
