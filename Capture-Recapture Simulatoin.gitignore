@@ -1,7 +1,7 @@
 # Simulating-capture-recapture-data
 This code can be used to simulate capture-recapture data
 ################################################################################
-# SIMULATE CJS DATA 
+# SIMULATE Capture-Recapture DATA 
 ################################################################################
 # Collecting parameter estiamtes for the multiple simulated datasets
 phi.ipm.simul <- vector()
